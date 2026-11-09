@@ -1,0 +1,42 @@
+# Секреты и окружение
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Зависимости
+node_modules/
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Сборка
+dist/
+build/
+out/
+*.egg-info/
+
+# Логи и временные файлы
+*.log
+logs/
+tmp/
+*.tmp
+*.bak
+
+# Базы данных (локальные)
+*.sqlite
+*.sqlite3
+*.db
+
+# IDE и ОС
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Claude Code (локальные настройки)
+.claude/settings.local.json
