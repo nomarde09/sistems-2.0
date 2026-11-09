@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Свободные заявки</h1>
+{% if rows %}
+<ul class="request-list">
+  {% for r in rows %}{% with show_take=True %}{% include '_brigade_card.html' %}{% endwith %}{% endfor %}
+</ul>
+{% else %}
+<div class="card empty">
+  <p>Свободных заявок нет.</p>
+  <p class="muted">Когда офис создаст новую заявку, она появится здесь.</p>
+</div>
+{% endif %}
+{% endblock %}

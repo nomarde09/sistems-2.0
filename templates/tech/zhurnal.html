@@ -1,0 +1,36 @@
+{% extends "tech/base.html" %}
+{% block tech_content %}
+<h1>Журнал действий</h1>
+<form class="card filters" method="get" action="{{ url_for('tech.journal') }}">
+  <div class="filter-row">
+    <label>Кто
+      <select name="kto"><option value="">все</option>
+        {% for uid in USERS %}<option value="{{ uid }}"{% if who == uid %} selected{% endif %}>{{ uid|who }}</option>{% endfor %}
+      </select></label>
+    <label>Действие
+      <select name="deystvie"><option value="">все</option>
+        {% for k, label in EVENT_LABELS.items() %}<option value="{{ k }}"{% if action == k %} selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select></label>
+    <label>№ заявки
+      <input type="text" name="zayavka" inputmode="numeric" value="{{ req_text }}"></label>
+  </div>
+  <div class="form-actions"><button class="button primary" type="submit">Показать</button></div>
+</form>
+<p class="summary">Показано: <strong>{{ rows|length }}</strong> (не больше 500, свежие сверху).</p>
+<div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>Когда</th><th>Кто</th><th>Действие</th><th>Заявка</th><th>Подробности</th></tr></thead>
+    <tbody>
+      {% for e in rows %}
+      <tr>
+        <td class="nowrap">{{ e.at|dt }}</td>
+        <td>{{ e.user_id|who }}</td>
+        <td>{{ EVENT_LABELS.get(e.action, e.action) }}</td>
+        <td><a href="{{ url_for('tech.request_detail', request_id=e.request_id) }}">№{{ e.request_id }}</a> {{ e.client_name or '' }}</td>
+        <td>{{ e.details or '' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

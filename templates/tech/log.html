@@ -1,0 +1,27 @@
+{% extends "tech/base.html" %}
+{% block tech_content %}
+<h1>Лог приложения</h1>
+<form class="card filters" method="get" action="{{ url_for('tech.log_view') }}">
+  <div class="filter-row">
+    <label>Что показать
+      <select name="chto">
+        <option value="all"{% if mode == 'all' %} selected{% endif %}>всё</option>
+        <option value="vhod"{% if mode == 'vhod' %} selected{% endif %}>только входы и выходы</option>
+        <option value="warn"{% if mode == 'warn' %} selected{% endif %}>только предупреждения</option>
+      </select></label>
+    <label>Строк
+      <select name="strok">
+        {% for n in (100, 300, 1000, 5000) %}<option value="{{ n }}"{% if limit == n %} selected{% endif %}>{{ n }}</option>{% endfor %}
+      </select></label>
+    <label>Содержит
+      <input type="search" name="soderzhit" value="{{ needle }}" placeholder="адрес, /ofis, 404…"></label>
+  </div>
+  <div class="form-actions"><button class="button primary" type="submit">Показать</button></div>
+</form>
+<p class="summary">Файл app.log, свежие строки сверху: <strong>{{ lines|length }}</strong>.</p>
+{% if lines %}
+<pre class="log-view">{{ lines|join('\n') }}</pre>
+{% else %}
+<div class="card empty"><p>Лог пуст.</p></div>
+{% endif %}
+{% endblock %}

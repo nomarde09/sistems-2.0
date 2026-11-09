@@ -1,0 +1,7 @@
+{%- if r.request_type or r.equipment -%}
+{{ REQUEST_TYPES.get(r.request_type) or 'тип не указан' }} · {{ EQUIPMENT.get(r.equipment) or 'оборудование не указано' }}
+{%- elif r.work_type -%}
+{{ r.work_type }}
+{%- else -%}
+тип не указан · оборудование не указано
+{%- endif -%}

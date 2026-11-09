@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card login-card">
+  <h1>Смена пароля</h1>
+  {% if forced %}
+  <p class="muted">Вы вошли по временному паролю. Придумайте свой — не короче {{ min_len }} символов. Без этого сайт дальше не откроется.</p>
+  {% else %}
+  <p class="muted">Новый пароль — не короче {{ min_len }} символов. После смены на других устройствах нужно будет войти заново.</p>
+  {% endif %}
+  {% if error %}<p class="alert">{{ error }}</p>{% endif %}
+  <form class="login-form" method="post" action="{{ url_for('change_password') }}">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <label class="field">{% if forced %}Временный пароль{% else %}Текущий пароль{% endif %}
+      <input class="plain" type="password" name="current" autocomplete="current-password">
+    </label>
+    <label class="field">Новый пароль
+      <input class="plain" type="password" name="new1" autocomplete="new-password" minlength="{{ min_len }}">
+    </label>
+    <label class="field">Новый пароль ещё раз
+      <input class="plain" type="password" name="new2" autocomplete="new-password" minlength="{{ min_len }}">
+    </label>
+    <button class="button primary" type="submit">Сохранить пароль</button>
+  </form>
+</div>
+{% endblock %}

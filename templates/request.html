@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block content %}
+<p class="back"><a href="{{ url_for('ofis', status=r.status) }}">← {% for k, label in [('new','Новые'),('in_work','В работе'),('done','Выполнены'),('cancelled','Отменены')] %}{% if k == r.status %}{{ label }}{% endif %}{% endfor %}</a></p>
+
+{% if created %}<p class="notice">Заявка создана. Бригады увидят её в свободных.</p>{% endif %}
+
+<div class="page-head">
+  <h1>Заявка №{{ r.id }}</h1>
+  <div class="badges">
+    {% include '_status_badge.html' %}
+    {% if r.urgent %}<span class="badge urgent">Срочно</span>{% endif %}
+    {% if r.warranty %}<span class="badge warranty">Гарантия</span>{% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <dl class="details">
+    <dt>Клиент</dt><dd>{{ r.client_name }}</dd>
+    <dt>Телефон</dt><dd><a href="tel:{{ r.phone|tel }}">{{ r.phone }}</a></dd>
+    <dt>Адрес</dt><dd>{{ r.address }}</dd>
+    <dt>Геолокация</dt>
+    <dd>
+      {% if r.location %}<span class="location-text">{{ r.location }}</span>{% else %}не указана{% endif %}
+      {% include '_map.html' %}
+    </dd>
+    {% include '_type_details.html' %}
+    <dt>Договорились на</dt><dd>{% if r.agreed_date %}{% include '_when.html' %}{% else %}не указано{% endif %}</dd>
+    <dt>Что сделать</dt><dd class="multiline">{{ r.description }}</dd>
+  </dl>
+</div>
+
+{% if r.status != 'cancelled' %}
+<div class="warranty-box">
+  <form method="post" action="{{ url_for('request_warranty', request_id=r.id) }}">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    {% if r.warranty %}
+    <span>Заявка <strong>гарантийная</strong>.</span>
+    <button class="button" type="submit">Сделать платной</button>
+    {% else %}
+    <span>Заявка <strong>платная</strong>.</span>
+    <button class="button" type="submit">Сделать гарантийной</button>
+    {% endif %}
+  </form>
+</div>
+{% endif %}
+
+{% if r.status == 'cancelled' %}
+<div class="card cancelled-box">
+  <p><strong>Заявка отменена</strong> — {{ r.cancelled_by|who }}, {{ r.cancelled_at|dt }}.</p>
+  {% if r.cancel_reason %}<p>Причина: {{ r.cancel_reason }}</p>{% endif %}
+</div>
+{% endif %}
+
+{% if r.status == 'done' %}{% include '_report.html' %}{% endif %}
+
+{% if r.status != 'cancelled' %}
+<div class="boss-actions">
+  <a class="button" href="{{ url_for('request_edit', request_id=r.id) }}">Исправить</a>
+  {% if r.status in ('new', 'in_work') %}
+  <details class="cancel-box">
+    <summary class="button danger">Отменить заявку</summary>
+    <form class="form" method="post" action="{{ url_for('request_cancel', request_id=r.id) }}">
+      <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+      {% if r.status == 'in_work' %}<p class="alert">Заявка сейчас у бригады «{{ r.taken_by|who }}». После отмены она пропадёт у неё из списка.</p>{% endif %}
+      <div class="field">
+        <label for="reason">Причина (необязательно)</label>
+        <input id="reason" name="reason" placeholder="Например: клиент передумал" autocomplete="off">
+      </div>
+      <button class="button danger-solid" type="submit">Да, отменить заявку №{{ r.id }}</button>
+    </form>
+  </details>
+  {% endif %}
+</div>
+{% endif %}
+
+<h2>История</h2>
+<ul class="history">
+  {% for e in events %}
+  <li class="event-{{ e.action }}">
+    <span class="when">{{ e.at|dt }}</span>
+    <span><strong>{{ e.user_id|who }}</strong> — {{ (EVENT_LABELS.get(e.action, e.action))[:1]|lower }}{{ (EVENT_LABELS.get(e.action, e.action))[1:] }}{% if e.details %} ({{ e.details }}){% endif %}</span>
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

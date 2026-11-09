@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block content %}
+<p class="back">
+  {% if row %}<a href="{{ url_for('request_card', request_id=row.id) }}">← Заявка №{{ row.id }}</a>
+  {% else %}<a href="{{ url_for('ofis') }}">← Все заявки</a>{% endif %}
+</p>
+<h1>{% if row %}Исправить заявку №{{ row.id }}{% else %}Новая заявка{% endif %}</h1>
+
+{% if errors %}<p class="alert">Проверьте поля, отмеченные красным.</p>{% endif %}
+
+<form class="form" method="post" novalidate
+      action="{% if row %}{{ url_for('request_edit', request_id=row.id) }}{% else %}{{ url_for('ofis_new') }}{% endif %}">
+  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+
+  <div class="field{% if errors.client_name %} has-error{% endif %}">
+    <label for="client_name">Имя клиента</label>
+    <input id="client_name" name="client_name" value="{{ v.client_name }}" autocomplete="off">
+    {% if errors.client_name %}<span class="field-error">{{ errors.client_name }}</span>{% endif %}
+  </div>
+
+  <div class="field{% if errors.phone %} has-error{% endif %}">
+    <label for="phone">Телефон</label>
+    <input id="phone" name="phone" type="tel" value="{{ v.phone }}" placeholder="+7 900 000-00-00" autocomplete="off">
+    {% if errors.phone %}<span class="field-error">{{ errors.phone }}</span>{% endif %}
+  </div>
+
+  <div class="field{% if errors.address %} has-error{% endif %}">
+    <label for="address">Адрес</label>
+    <input id="address" name="address" value="{{ v.address }}" autocomplete="off">
+    {% if errors.address %}<span class="field-error">{{ errors.address }}</span>{% endif %}
+  </div>
+
+  <div class="field{% if errors.location %} has-error{% endif %}">
+    <label for="location">Геолокация (необязательно)</label>
+    <input id="location" name="location" inputmode="url" value="{{ v.location }}" placeholder="Ссылка на карту или координаты" autocomplete="off">
+    <div><button class="chip" type="button" id="geo-btn">📍 Взять моё местоположение</button></div>
+    <span class="field-hint muted" id="geo-status">Скопируйте ссылку из 2ГИС, Яндекс или Google Карт, или ту, что прислал клиент в мессенджере.</span>
+    {% if errors.location %}<span class="field-error">{{ errors.location }}</span>{% endif %}
+  </div>
+
+  <div class="two-cols">
+    <div class="field{% if errors.request_type %} has-error{% endif %}">
+      <label for="request_type">Тип заявки</label>
+      <select id="request_type" name="request_type">
+        <option value="">— выберите —</option>
+        {% for k, label in REQUEST_TYPES.items() %}<option value="{{ k }}"{% if v.request_type == k %} selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+      {% if errors.request_type %}<span class="field-error">{{ errors.request_type }}</span>{% endif %}
+    </div>
+    <div class="field{% if errors.equipment %} has-error{% endif %}">
+      <label for="equipment">Оборудование</label>
+      <select id="equipment" name="equipment">
+        <option value="">— выберите —</option>
+        {% for k, label in EQUIPMENT.items() %}<option value="{{ k }}"{% if v.equipment == k %} selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+      {% if errors.equipment %}<span class="field-error">{{ errors.equipment }}</span>{% endif %}
+    </div>
+  </div>
+  {% if row and row.work_type %}<p class="field-hint muted">Раньше в заявке было записано «Что монтируем»: {{ row.work_type }}</p>{% endif %}
+
+  <fieldset class="field{% if errors.agreed_date %} has-error{% endif %}">
+    <legend>На какой день и время договорились (если уже известно)</legend>
+    <div class="date-pick" id="date-pick" data-today="{{ today_iso }}">
+      <select name="agreed_day" aria-label="День">
+        <option value="">— день —</option>
+        {% for n in days %}<option value="{{ n }}"{% if v.agreed_day|string == n|string %} selected{% endif %}>{{ n }}</option>{% endfor %}
+      </select>
+      <select name="agreed_month" aria-label="Месяц">
+        {% for val, label in month_options %}<option value="{{ val }}"{% if selected_month == val %} selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+      <select name="agreed_time" aria-label="Время">
+        <option value="">— время —</option>
+        {% for t in AGREED_TIMES %}<option value="{{ t }}"{% if v.agreed_time == t %} selected{% endif %}>{{ t }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="quick-dates">
+      <button class="chip" type="button" data-offset="0">Сегодня</button>
+      <button class="chip" type="button" data-offset="1">Завтра</button>
+      <button class="chip" type="button" data-offset="2">Послезавтра</button>
+      <button class="chip" type="button" id="date-none">Не знаем</button>
+    </div>
+    {% if errors.agreed_date %}<span class="field-error">{{ errors.agreed_date }}</span>{% endif %}
+  </fieldset>
+
+  <label class="check"><input type="checkbox" name="urgent" value="1"{% if v.urgent %} checked{% endif %}> Срочная заявка</label>
+  {% if row %}
+  <label class="check"><input type="checkbox" name="warranty" value="1"{% if v.warranty %} checked{% endif %}> Гарантийная заявка</label>
+  {% endif %}
+
+  <div class="field{% if errors.description %} has-error{% endif %}">
+    <label for="description">Что нужно сделать</label>
+    <textarea id="description" name="description" rows="5">{{ v.description }}</textarea>
+    {% if errors.description %}<span class="field-error">{{ errors.description }}</span>{% endif %}
+  </div>
+
+  {% if row and row.status == 'done' %}
+  <div class="form-section">
+    <h2>Отчёт бригады ({{ row.taken_by|who }})</h2>
+  </div>
+  <div class="field{% if errors.report_work %} has-error{% endif %}">
+    <label for="report_work">Что сделано</label>
+    <textarea id="report_work" name="report_work" rows="4">{{ v.report_work }}</textarea>
+    {% if errors.report_work %}<span class="field-error">{{ errors.report_work }}</span>{% endif %}
+  </div>
+  <div class="field{% if errors.report_price %} has-error{% endif %}">
+    <label for="report_price">Цена, общая сумма</label>
+    <input id="report_price" name="report_price" inputmode="numeric" value="{{ v.report_price }}" autocomplete="off">
+    {% if errors.report_price %}<span class="field-error">{{ errors.report_price }}</span>{% endif %}
+  </div>
+  {% include '_payment_choice.html' %}
+  <div class="field">
+    <label for="report_comment">Комментарий (необязательно)</label>
+    <textarea id="report_comment" name="report_comment" rows="3">{{ v.report_comment }}</textarea>
+  </div>
+  {% endif %}
+
+  <div class="form-actions">
+    <button class="button primary" type="submit">{% if row %}Сохранить исправления{% else %}Создать заявку{% endif %}</button>
+    <a class="button" href="{% if row %}{{ url_for('request_card', request_id=row.id) }}{% else %}{{ url_for('ofis') }}{% endif %}">Назад</a>
+  </div>
+</form>
+
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='form.js') }}" defer></script>{% endblock %}

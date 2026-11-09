@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="tech-bar">
+  <span class="tech-mark">Технический раздел · только чтение</span>
+  {% if session.get('tech_admin') %}
+  <nav class="tech-nav">
+    <a href="{{ url_for('tech.index') }}"{% if active == 'stats' %} class="active"{% endif %}>Статистика</a>
+    <a href="{{ url_for('tech.journal') }}"{% if active == 'journal' %} class="active"{% endif %}>Журнал действий</a>
+    <a href="{{ url_for('tech.log_view') }}"{% if active == 'log' %} class="active"{% endif %}>Лог приложения</a>
+    <form method="post" action="{{ url_for('tech.logout') }}">
+      <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+      <button class="link-button" type="submit">Выйти</button>
+    </form>
+  </nav>
+  {% endif %}
+</div>
+{% block tech_content %}{% endblock %}
+{% endblock %}

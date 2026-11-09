@@ -1,0 +1,21 @@
+{% extends "tech/base.html" %}
+{% block tech_content %}
+<p class="back"><a href="{{ url_for('tech.journal', zayavka=r.id) }}">← Журнал этой заявки</a></p>
+<h1>Заявка №{{ r.id }}</h1>
+<div class="table-wrap">
+  <table class="data">
+    <tbody>
+      {% for f in fields %}<tr><th>{{ f }}</th><td>{% if r[f] is none or r[f] == '' %}—{% else %}{{ r[f] }}{% endif %}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+<h2>История</h2>
+<ul class="history">
+  {% for e in events %}
+  <li class="event-{{ e.action }}">
+    <span class="when">{{ e.at|dt }}</span>
+    <span><strong>{{ e.user_id|who }}</strong> — {{ EVENT_LABELS.get(e.action, e.action) }}{% if e.details %} ({{ e.details }}){% endif %}</span>
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

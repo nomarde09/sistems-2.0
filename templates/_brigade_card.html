@@ -1,0 +1,18 @@
+<li class="request-row brigade-row">
+  <a class="row-link" href="{{ url_for('brigade_request', request_id=r.id) }}">
+    <div class="row-top">
+      <span class="num">№{{ r.id }}</span>
+      {% if r.urgent %}<span class="badge urgent">Срочно</span>{% endif %}
+      {% if r.warranty %}<span class="badge warranty">Гарантия</span>{% endif %}
+      <span class="row-day">{% if r.agreed_date %}на {% include '_when.html' %}{% else %}день не назначен{% endif %}</span>
+    </div>
+    <div class="row-main"><strong>{{ r.address }}</strong>{% if r.location %} <span class="geo-mark">📍 на карте</span>{% endif %}</div>
+    <div class="row-what">{% include '_type_line.html' %}</div>
+  </a>
+  {% if show_take %}
+  <form method="post" action="{{ url_for('brigade_take', request_id=r.id) }}">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <button class="button primary wide" type="submit">Взять</button>
+  </form>
+  {% endif %}
+</li>

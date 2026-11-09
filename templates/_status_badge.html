@@ -1,0 +1,1 @@
+<span class="badge status-{{ r.status }}">{{ STATUSES[r.status] }}{% if r.status == 'in_work' and r.taken_by %} · {{ r.taken_by|who }}{% endif %}</span>

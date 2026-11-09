@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<p class="back"><a href="{{ url_for('brigade_request', request_id=r.id) }}">← Заявка №{{ r.id }}</a></p>
+<h1>Отчёт по заявке №{{ r.id }}</h1>
+<p class="muted">{{ r.address }} · {% include '_type_line.html' %}</p>
+
+{% if r.warranty %}<p class="notice">Гарантийная заявка: клиент не платит. Если работа бесплатная, поставьте цену 0.</p>{% endif %}
+{% if errors %}<p class="alert">Проверьте поля, отмеченные красным.</p>{% endif %}
+
+<form class="form" method="post" novalidate action="{{ url_for('brigade_report', request_id=r.id) }}">
+  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+  <div class="field{% if errors.report_work %} has-error{% endif %}">
+    <label for="report_work">Что сделано</label>
+    <textarea id="report_work" name="report_work" rows="4" placeholder="Например: установили 4 камеры, настроили запись">{{ v.report_work }}</textarea>
+    {% if errors.report_work %}<span class="field-error">{{ errors.report_work }}</span>{% endif %}
+  </div>
+  <div class="field{% if errors.report_price %} has-error{% endif %}">
+    <label for="report_price">Цена, общая сумма</label>
+    <input id="report_price" name="report_price" type="text" inputmode="numeric" value="{{ v.report_price }}" placeholder="Например: 85000" autocomplete="off">
+    {% if errors.report_price %}<span class="field-error">{{ errors.report_price }}</span>{% endif %}
+  </div>
+  {% include '_payment_choice.html' %}
+  <div class="field">
+    <label for="report_comment">Комментарий (необязательно)</label>
+    <textarea id="report_comment" name="report_comment" rows="3" placeholder="Например: клиент просит позже добавить ещё одну камеру">{{ v.report_comment }}</textarea>
+  </div>
+  <div class="form-actions">
+    <button class="button primary" type="submit">Заявка выполнена</button>
+    <a class="button" href="{{ url_for('brigade_request', request_id=r.id) }}">Назад</a>
+  </div>
+</form>
+{% endblock %}

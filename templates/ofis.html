@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <h1>Заявки</h1>
+  <a class="button primary" href="{{ url_for('ofis_new') }}">+ Новая заявка</a>
+</div>
+
+<nav class="status-tabs" aria-label="Статус заявок">
+  {% for t in tabs %}
+  <a class="status-tab tab-{{ t.key }}{% if t.active %} active{% endif %}" href="{{ t.url }}">{{ t.label }} <span class="count">{{ t.count }}</span></a>
+  {% endfor %}
+</nav>
+
+<form class="card filters" method="get" action="{{ url_for('ofis') }}" role="search">
+  {% if tab != 'new' %}<input type="hidden" name="status" value="{{ tab }}">{% endif %}
+  <div class="search-row">
+    <label class="field"><span class="sr-only">Поиск</span>
+      <input type="search" name="q" value="{{ q }}" placeholder="Клиент, адрес, телефон, №…">
+    </label>
+    <button class="button primary" type="submit">Найти</button>
+  </div>
+  <details class="more-filters"{% if extra_count %} open{% endif %}>
+    <summary>Фильтры{% if extra_count %} ({{ extra_count }}){% endif %}</summary>
+    <div class="filter-row">
+      <label>Тип заявки
+        <select name="tip"><option value="">любой</option>
+          {% for k, label in REQUEST_TYPES.items() %}<option value="{{ k }}"{% if fv.tip == k %} selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select></label>
+      <label>Оборудование
+        <select name="oborud"><option value="">любое</option>
+          {% for k, label in EQUIPMENT.items() %}<option value="{{ k }}"{% if fv.oborud == k %} selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select></label>
+      <label>Гарантия
+        <select name="garantiya"><option value="">все</option>
+          <option value="da"{% if fv.garantiya == 'da' %} selected{% endif %}>гарантийные</option>
+          <option value="net"{% if fv.garantiya == 'net' %} selected{% endif %}>платные</option>
+        </select></label>
+      <label>Бригада
+        <select name="brigada"><option value="">любая</option>
+          {% for b in brigade_ids %}<option value="{{ b }}"{% if fv.brigada == b %} selected{% endif %}>{{ b|who }}</option>{% endfor %}
+        </select></label>
+      <label>Создал
+        <select name="avtor"><option value="">любой</option>
+          {% for a in office_ids %}<option value="{{ a }}"{% if fv.avtor == a %} selected{% endif %}>{{ a|who }}</option>{% endfor %}
+        </select></label>
+      <label>Выполнена
+        <select name="period"><option value="">когда угодно</option>
+          {% for k, label in period_options %}<option value="{{ k }}"{% if fv.period == k %} selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select></label>
+      <label>Оплата
+        <select name="oplata"><option value="">любая</option>
+          {% for k, label in PAYMENTS.items() %}<option value="{{ k }}"{% if fv.oplata == k %} selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select></label>
+    </div>
+  </details>
+  <div class="form-actions">{% if has_filters %}<a class="button" href="{{ reset_url }}">Сбросить</a>{% endif %}</div>
+</form>
+
+{% if has_filters or done_count %}
+<p class="summary">
+  {% if has_filters %}Найдено: <strong>{{ rows|length }}</strong>.{% endif %}
+  {% if done_count %}Выполнено: <strong>{{ done_count }}</strong> на сумму <strong>{{ done_sum|money }}</strong>.{% endif %}
+</p>
+{% endif %}
+{% if pay_summary %}
+<p class="summary pay-summary">
+  {% for label, total in pay_summary %}<span>{{ label }}: <strong>{{ total|money }}</strong></span>{% endfor %}
+</p>
+{% endif %}
+
+{% if rows %}
+<ul class="request-list">
+  {% for r in rows %}
+  <li>
+    <a class="request-row" href="{{ url_for('request_card', request_id=r.id) }}">
+      <div class="row-top">
+        <span class="num">№{{ r.id }}</span>
+        {% include '_status_badge.html' %}
+        {% if r.urgent %}<span class="badge urgent">Срочно</span>{% endif %}
+        {% if r.warranty %}<span class="badge warranty">Гарантия</span>{% endif %}
+      </div>
+      <div class="row-main"><strong>{{ r.client_name }}</strong><span class="muted">{{ r.address }}</span></div>
+      <div class="row-what-office">{% include '_type_line.html' %}</div>
+      <div class="row-meta muted">
+        {% if r.agreed_date %}<span>На {% include '_when.html' %}</span>{% endif %}
+        <span>Создал: {{ r.created_by|who }}, {{ r.created_at|dt }}</span>
+        {% if r.status == 'in_work' %}<span>Взято: {{ r.taken_at|dt }}</span>{% endif %}
+        {% if r.status == 'done' %}<span class="done-meta">Выполнил(а) {{ r.taken_by|who }} {{ r.done_at|dt }} · {{ r.report_price|money }} · {{ PAYMENTS.get(r.report_payment) or 'не указана' }}</span>{% endif %}
+        {% if r.status == 'cancelled' %}<span>Отменил: {{ r.cancelled_by|who }}, {{ r.cancelled_at|dt }}</span>{% endif %}
+      </div>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<div class="card empty">
+  {% if not has_filters and total_all == 0 %}
+    <p>Заявок пока нет.</p>
+    <p class="muted">Нажмите «Новая заявка», чтобы создать первую.</p>
+  {% elif has_filters and total_all == 0 %}
+    <p>Ничего не нашлось.</p>
+    <p class="muted">Попробуйте убрать часть условий или нажмите «Сбросить».</p>
+  {% else %}
+    <p>{% if has_filters %}Здесь ничего не нашлось.{% else %}В этой вкладке заявок нет.{% endif %}</p>
+    {% if other_tabs %}
+    <p class="muted">Есть в других: {% for t in other_tabs %}<a href="{{ t.url }}">{{ t.label }} ({{ t.count }})</a>{% if not loop.last %}, {% endif %}{% endfor %}</p>
+    {% endif %}
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

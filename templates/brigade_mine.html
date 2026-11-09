@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Мои заявки</h1>
+{% if rows %}
+<ul class="request-list">
+  {% for r in rows %}{% include '_brigade_card.html' %}{% endfor %}
+</ul>
+{% else %}
+<div class="card empty">
+  <p>У вас нет заявок в работе.</p>
+  <p class="muted">Возьмите заявку во вкладке «Свободные».</p>
+</div>
+{% endif %}
+
+{% if recent %}
+<h2>Выполненные недавно</h2>
+<ul class="request-list compact">
+  {% for r in recent %}
+  <li>
+    <a class="request-row" href="{{ url_for('brigade_request', request_id=r.id) }}">
+      <div class="row-top">
+        <span class="num">№{{ r.id }}</span>
+        {% include '_status_badge.html' %}
+        <span class="muted">{{ r.done_at|dt }}</span>
+      </div>
+      <div class="row-main"><span>{{ r.address }}</span><span class="price">{{ r.report_price|money }}</span></div>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+{% endblock %}

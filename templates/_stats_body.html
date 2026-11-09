@@ -1,0 +1,118 @@
+<nav class="status-tabs period-tabs" aria-label="Период">
+  {% for key, label in s.periods %}
+  <a class="status-tab{% if s.key == key %} active{% endif %}" href="{{ base_url }}?p={{ key }}">{{ label }}</a>
+  {% endfor %}
+</nav>
+<form class="day-pick" method="get" action="{{ base_url }}">
+  <input type="hidden" name="p" value="day">
+  <label for="stat-day">Конкретный день:</label>
+  <input id="stat-day" type="date" name="d" value="{{ s.day_value }}" max="{{ s.today }}">
+  <button class="button" type="submit">Показать</button>
+</form>
+<p class="period-caption">Показано: <strong>{{ s.caption }}</strong>{% if s.range_text %} ({{ s.range_text }}){% endif %}</p>
+
+<div class="stat-grid">
+  <div class="stat"><span class="stat-label">Создано заявок</span><span class="stat-value">{{ s.tiles.created }}</span></div>
+  <div class="stat"><span class="stat-label">Взято в работу</span><span class="stat-value">{{ s.tiles.taken }}</span></div>
+  <div class="stat"><span class="stat-label">Выполнено</span><span class="stat-value">{{ s.tiles.done }}</span></div>
+  <div class="stat"><span class="stat-label">Отменено</span><span class="stat-value">{{ s.tiles.cancelled }}</span></div>
+  <div class="stat"><span class="stat-label">Сумма выполненных</span><span class="stat-value">{{ s.tiles.sum|money }}</span></div>
+  <div class="stat"><span class="stat-label">Ожидание до взятия, в среднем</span><span class="stat-value">{{ s.tiles.wait }}</span></div>
+  <div class="stat stat-now"><span class="stat-label">Сейчас новых</span><span class="stat-value">{{ s.tiles.now_new }}</span></div>
+  <div class="stat stat-now"><span class="stat-label">Сейчас в работе</span><span class="stat-value">{{ s.tiles.now_in_work }}</span></div>
+</div>
+
+<h2>Бригады</h2>
+<div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>Кто</th><th>Взял</th><th>Выполнил</th><th>Сумма</th><th>Взял → выполнил, в среднем</th><th>Возвратов</th><th>Сейчас в работе</th></tr></thead>
+    <tbody>
+      {% for b in s.brigades %}
+      <tr><td>{{ b.id|who }}</td><td>{{ b.taken }}</td><td>{{ b.done }}</td><td>{{ b.sum|money }}</td><td>{{ b.span }}</td><td>{{ b.returned }}</td><td>{{ b.in_work }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<h2>Офис</h2>
+<div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>Кто</th><th>Создал заявок</th><th>Исправлений</th><th>Отмен</th></tr></thead>
+    <tbody>
+      {% for o in s.office %}
+      <tr><td>{{ o.id|who }}</td><td>{{ o.created }}</td><td>{{ o.edited }}</td><td>{{ o.cancelled }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<h2>Оплата выполненных</h2>
+{% if s.pay_rows %}
+<div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>Способ</th><th>Сумма</th></tr></thead>
+    <tbody>
+      {% for label, total in s.pay_rows %}<tr><td>{{ label }}</td><td>{{ total|money }}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card empty"><p>За этот период выполненных заявок нет.</p></div>
+{% endif %}
+
+<h2>По типу заявки и оборудованию</h2>
+{% if s.combo_rows %}
+<div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>Тип заявки · оборудование</th><th>Создано</th><th>Выполнено</th><th>Сумма</th></tr></thead>
+    <tbody>
+      {% for label, c in s.combo_rows %}<tr><td>{{ label }}</td><td>{{ c.created }}</td><td>{{ c.done }}</td><td>{{ c.sum|money }}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card empty"><p>За этот период заявок нет.</p></div>
+{% endif %}
+
+<h2>Гарантийные и платные</h2>
+<div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>Заявки</th><th>Создано</th><th>Выполнено</th><th>Сумма</th></tr></thead>
+    <tbody>
+      {% for w in s.warranty_rows %}<tr><td>{{ w.title }}</td><td>{{ w.created }}</td><td>{{ w.done }}</td><td>{{ w.sum|money }}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if s.days %}
+<h2>По дням</h2>
+<div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>День</th><th>Создано</th><th>Выполнено</th><th>Сумма</th></tr></thead>
+    <tbody>
+      {% for day in s.days %}
+      <tr{% if not day.created and not day.done and not day.sum %} class="muted-row"{% endif %}>
+        <td class="nowrap"><a href="{{ base_url }}?p=day&amp;d={{ day.iso }}">{{ day.label }}</a> <span class="muted">{{ day.weekday }}</span></td>
+        <td>{{ day.created }}</td><td>{{ day.done }}</td><td>{{ day.sum|money }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if s.key == 'all' %}
+<h2>По месяцам</h2>
+{% if s.months %}
+<div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>Месяц</th><th>Создано</th><th>Выполнено</th><th>Сумма</th></tr></thead>
+    <tbody>
+      {% for m in s.months %}<tr><td>{{ m.key|month_name }}</td><td>{{ m.created }}</td><td>{{ m.done }}</td><td>{{ m.sum|money }}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card empty"><p>Заявок пока нет.</p></div>
+{% endif %}
+{% endif %}
